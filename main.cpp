@@ -101,7 +101,7 @@ void write_user_table(User_Table user_table); //*
 int read_product_table(Product products[]); //*
 void write_product_table(Product_Table product_table); //*
 User find_user_table(int user_header, std::string query, Tables t);
-Product find_product_table(int product_header, std::string query, Tables t); //*
+Product find_product_table(std::string query, Tables t); //*
 int product_status(int id, int status); //*
 void print_products(Product_Table p); //*
 void generate_receipt(Product p[], std::string client);
@@ -155,18 +155,16 @@ Tables init_tables(Tables t)
 
     User user_buff[ALLOC_SIZE];
     User_Table user_table;
-    Product product_buff[ALLOC_SIZE];
-    Product_Table product_table;
 
     for (int i = 0 ; i < ALLOC_SIZE ; ++i)
     {
         memoset(user_table.users[i].wishlist, ALLOC_SIZE, NIL);
         memoset(user_table.users[i].cart, ALLOC_SIZE, NIL);
-        // stars product
-        memoset(product_table.products[i].stars, ALLOC_SIZE , NIL);
         memoset(user_table.users[i].history, ALLOC_SIZE, NIL);
     }
 
+    Product product_buff[ALLOC_SIZE];
+    Product_Table product_table;
 
     if (!file_exists(t.user_table.path))
     {
@@ -278,8 +276,6 @@ int read_product_table(Product products[])
             ++lines_read;
             std::string temp[ALLOC_SIZE] = {""};
             Product p;
-
-            memoset(p.stars, ALLOC_SIZE, NIL);
 
             tokenizer_csv(s, temp);
             p.id = std::stoi(temp[0]);
@@ -432,12 +428,12 @@ int run(int program_state, Tables t[])
             return buy(t);
         }
             break;
-        case 7:
+        case RETURN_PRODUCT:
         {
             return return_product(t);
         }
             break;
-        case 8:
+        case REVIEW_PRODUCT:
             break;
         case ADD_PRODUCT:
         {
@@ -666,46 +662,6 @@ User find_user_table(int user_header, std::string query, Tables t)
             }
             return null_user;
         }
-        case WISHLIST:
-            // {
-            //     printf("Processing wishlist...\n");
-            //     for (int i = 0 ; i < t.user_table.len ; ++i )
-            //     {
-            //         if (t.user_table.users[i].wishlist == query )
-            //             return t.user_table.users[i];
-            //     }
-            //     return null_user;
-            // }
-        case PAYMENT_METHOD:
-            // {
-            //     printf("Processing payment method...\n");
-            //     for (int i = 0 ; i < t.user_table.len ; ++i )
-            //     {
-            //         if (t.user_table.users[i].payment_method == query)
-            //             return t.user_table.users[i];
-            //     }
-            //     return null_user;
-            // }
-        case CART:
-            // {
-            //     printf("Processing cart...\n");
-            //     for (int i = 0 ; i < t.user_table.len ; ++i )
-            //     {
-            //         if (t.user_table.users[i].cart == query)
-            //             return t.user_table.users[i];
-            //     }
-            //     return null_user;
-            // }
-        case HISTORY:
-            // {
-            //     printf("Processing history...\n");
-            //     for (int i = 0 ; i < t.user_table.len ; ++i )
-            //     {
-            //         if (t.user_table.users[i].history == query)
-            //             return t.user_table.users[i];
-            //     }
-            //     return null_user;
-            // }
         default:
             return null_user;
             break;
@@ -714,7 +670,7 @@ User find_user_table(int user_header, std::string query, Tables t)
     return null_user;
 }
 
-Product find_product_table(int product_header, std::string query, Tables t)
+Product find_product_table(std::string query, Tables t)
 {
     Product null_product;
     null_product.is_null = true;
@@ -794,6 +750,32 @@ int show_products(Product_Table p)
     }
 }
 
+int review_product(Tables t[])
+{
+    int opt;
+    int history_len = t[0].user_table.users[t[0].current_user - 1].history_len;
+    int id;
+    Product_Table p;
+    Product rp;
+
+    std::cout << "REVIEW PRODUCT" << std::endl;
+
+    std::cout << "Type the product's id you'd like to review" << std::endl;
+
+    for (int i = 0 ; i < history_len; ++i)
+    {
+        id = break_composed_id(t[0].user_table.users[t[0].current_user - 1].history[i]);
+        p.products[i] = find_product_table(std::to_string(id), t[0]);
+        ++p.len;
+    }
+    print_products(p);
+
+    std::cout << "-> ";
+    std::cin >> opt;
+
+    return LOBBY;
+}
+
 void print_products(Product_Table p)
 {
     for (int i = 0 ; i < p.len ; ++i)
@@ -826,7 +808,7 @@ int add_to_cart(Tables t[])
         std::cout << "Type the product's ID" << std::endl;
         std::cout << "-> ";
         std::cin >> id;
-        res = find_product_table(ID, id, t[0]);
+        res = find_product_table(id, t[0]);
         if (res.is_null)
         {
             std::cout << "The ID doesn't exist" << std::endl;
@@ -854,7 +836,11 @@ int add_to_cart(Tables t[])
                     break;
             }
             else
+                opt = ask("Go back? Y/N");
+            if (opt == 'a' || opt == 'A')
                 continue;
+            else
+                break;
         }
     }
     return LOBBY;
@@ -893,7 +879,7 @@ int buy(Tables t[])
         while (t[0].user_table.users[user_index].cart[index] != NIL)
         {
             query = std::to_string(t[0].user_table.users[user_index].cart[0]);
-            res = find_product_table(ID, query, t[0]);
+            res = find_product_table(query, t[0]);
             std::string statement = "Buy " + res.name + " for $" + std::to_string(res.price) + " Y/N?";
             opt = ask(statement);
             if (opt == 'Y' || opt == 'y')
@@ -1030,7 +1016,7 @@ int return_product(Tables t[])
     for (int i = 0 ; i < history_len; ++i)
     {
         id = break_composed_id(t[0].user_table.users[t[0].current_user - 1].history[i]);
-        p.products[i] = find_product_table(ID, std::to_string(id), t[0]);
+        p.products[i] = find_product_table(std::to_string(id), t[0]);
         ++p.len;
     }
     print_products(p);
