@@ -48,7 +48,9 @@ struct Product
     float price = NIL;
     Dimensions dimensions = {NIL, NIL, NIL};
     float weight = NIL;
-    int stars[ALLOC_SIZE] = {NIL} ;
+    int stars[ALLOC_SIZE] = {NIL};
+    int stars_len;
+    float average_stars;
     std::string comments[ALLOC_SIZE] = {"no comments"};
     std::string vendor = {"John Doe"};
     bool is_null = false;
@@ -107,6 +109,7 @@ void generate_return_receipt(Product p[], std::string sender, std::string receiv
 int break_composed_id(int composed_id);
 
 char ask(std::string question); //*
+float average_stars(int stars[], int stars_len);
 bool file_exists(std::string path); //*
 int tokenizer_csv(std::string line, std::string dest[]); //*
 int tokenizer_dot(std::string line, std::string dest[]); //*
@@ -287,8 +290,9 @@ int read_product_table(Product products[])
             p.dimensions.z = std::stof(temp[5]);
             p.weight = std::stoi(temp[6]);
             tokenizer_dot(temp[7], p.comments);
-            tokenizer_dot_int(temp[8], p.stars);
+            p.stars_len = tokenizer_dot_int(temp[8], p.stars);
             p.vendor = temp[9];
+            p.average_stars = average_stars(p.stars, p.stars_len);
 
             products[position] = p;
             ++position;
@@ -325,11 +329,11 @@ void write_user_table(User_Table user_table)
               << ","
               << user_table.users[i].password
               << ","
-              <<  iatos(user_table.users[i].wishlist)
+              << iatos(user_table.users[i].wishlist)
               << ","
               << user_table.users[i].payment_method
               << ","
-              <<  iatos(user_table.users[i].cart)
+              << iatos(user_table.users[i].cart)
               << ","
               << iatos(user_table.users[i].history)
               << ","
@@ -370,9 +374,9 @@ void write_product_table(Product_Table product_table)
               << ","
               << product_table.products[i].weight
               << ","
-              <<  satos(product_table.products[i].comments)
+              << satos(product_table.products[i].comments)
               << ","
-              << product_table.products[i].stars
+              << iatos(product_table.products[i].stars)
               << ","
               << product_table.products[i].vendor
               << ","
@@ -796,11 +800,11 @@ void print_products(Product_Table p)
     {
         if (i % 2 != 0)
         {
-            std::cout << "ID: " << p.products[i].id << "\t Name: " << p.products[i].name << "\t Price: " << p.products[i].price << "\t | " << std::endl;
+            std::cout << "ID: " << p.products[i].id << "\t Name: " << p.products[i].name << "\t Price: " << p.products[i].price << "\t Stars: " << p.products[i].average_stars << "\t | " << std::endl;
         }
         else
 
-            std::cout << "ID: " << p.products[i].id << "\t Name: " << p.products[i].name << "\t Price: " << p.products[i].price << "\t | \t";
+            std::cout << "ID: " << p.products[i].id << "\t Name: " << p.products[i].name << "\t Price: " << p.products[i].price << "\t Stars: " << p.products[i].average_stars << "\t | \t";
     }
 }
 
@@ -1175,6 +1179,17 @@ void stoia(std::string line, int dest[])
         dest[i] = line[i] - '0';
 }
 
+float average_stars(int stars[], int stars_len)
+{
+    float aux = 0.0f;
+    for (int i = 0; i < stars_len; ++i)
+    {
+        aux += stars[i];
+    }
+
+    return aux/stars_len;
+}
+
 std::string satos(std::string arr[])
 {
     std::string str;
@@ -1315,192 +1330,3 @@ Tables set_default_values(Tables t)
 
     return t;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
